@@ -143,7 +143,7 @@ class Sync {
                             })
                         }
                     } else {
-                        if (component.componentKey.indexOf('_Sign')>0) {
+                        if (component.componentKey.toLowerCase().indexOf('_sign')>0) {
                             templateInfo.signs = await this.hrm.getSigners(templateInfo.id, rec.K_ID)
                             if (!templateInfo.signs || templateInfo.signs.length===0) {
                                 throw(`请在hrm维护签署人信息`)

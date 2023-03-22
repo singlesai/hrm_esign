@@ -127,6 +127,19 @@ class Hrm {
         return rst
     }
 
+    getTableKey(tableName) {
+        var rst = 'id'
+        switch(tableName.toLowerCase()) {
+            case 'a43':
+                rst = 'TRANSID'
+                break
+            case 'k_month':
+                rst = 'k_id'
+                break
+        }
+        return rst
+    }
+
     async getDynamicVal(formula, id) {
         var arr = formula.split('.')
         var preTable = ''
@@ -157,7 +170,7 @@ class Hrm {
                         strSql += `\nleft join ${strArr[0]} t${jdx} on t${jdx}.BM0000=t${jdx-1}.${arr[jdx]}`
                         break
                     default:
-                        strSql = `select ${arr[jdx]} ${strSql} where t${0}.TRANSID=${id}`
+                        strSql = `select ${arr[jdx]} ${strSql} where t${0}.${this.getTableKey(arr[0])}=${id}`
                         break
                 }
             }
