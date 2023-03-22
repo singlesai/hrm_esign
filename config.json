@@ -1,0 +1,38 @@
+{
+    "mode": "dev",
+    "app": {
+        "product":{
+            "port": 8080
+        },
+        "dev":{
+            "port": 8080
+        }
+    },
+    "hrm": {
+        "dev": {
+            "wwwRoot": "D:\\hrsoft\\sTalent\\H5Web",
+            "filePath": "\\UserUploads",
+            "db": {
+                "hostname": "127.0.0.1",
+                "port": "1433",
+                "database": "LongshineWebHr",
+                "user": "sa",
+                "password": "p@ssw0rd"
+            },
+            "log": {
+                "db":{
+                    "exec": true
+                }
+            }
+        }
+    },
+    "esign": {
+        "product": {
+            "url": "https://openapi.esign.cn"
+        },
+        "dev": {
+            "url": "https://smlopenapi.esign.cn"
+
+        }
+    }
+}
