@@ -1,6 +1,7 @@
 const Esign = require('../esign')
 const Hrm = require('../hrm')
 const Pub = require('../public')
+const moment = require('moment')
 
 class Sync {
     constructor() {
@@ -63,10 +64,10 @@ class Sync {
                         }
                     }
                 }
-                var rst = await Esign.getCompanyApi(rec.company).template.createFileByTemplate(templateInfo.id, `转正申请_${rec.A0188}`, data)
+                var rst = await Esign.getCompanyApi(rec.company).template.createFileByTemplate(templateInfo.id, `转正申请_${moment(new Date()).format('yyyyMMddHHmmss')}_${rec.A0188}`, data)
                 console.log('file:', rst)
                 file = rst
-                rst = await Esign.getCompanyApi(rec.company).sign.createByFile(rst.fileId, `转正申请_${rec.A0188}`, signers)
+                rst = await Esign.getCompanyApi(rec.company).sign.createByFile(rst.fileId, `转正申请_${moment(new Date()).format('yyyyMMddHHmmss')}_${rec.A0188}`, signers)
                 console.log('sign flow id:', rst)
                 await this.hrm.NewEmpSynced(rec.TRANSID, 1,rst.signFlowId, '转正申请', '', `记录:${rec.A0188};id:${JSON.stringify(rst)}`)
                 cnt += 1
@@ -162,10 +163,10 @@ class Sync {
                         }
                     }
                 }
-                var rst = await Esign.getCompanyApi(rec.company).template.createFileByTemplate(templateInfo.id, `月度考勤_${rec.A0188}`, data)
+                var rst = await Esign.getCompanyApi(rec.company).template.createFileByTemplate(templateInfo.id, `月度考勤_${moment(new Date()).format('yyyyMMddHHmmss')}_${rec.A0188}`, data)
                 console.log('file:', rst)
                 file = rst
-                rst = await Esign.getCompanyApi(rec.company).sign.createByFile(rst.fileId, `月度考勤_${rec.A0188}`, signers)
+                rst = await Esign.getCompanyApi(rec.company).sign.createByFile(rst.fileId, `月度考勤_${moment(new Date()).format('yyyyMMddHHmmss')}_${rec.A0188}`, signers)
                 console.log('sign flow id:', rst)
                 await this.hrm.monthAttendanceSynced(rec.K_ID, 1,rst.signFlowId, '月度考勤', '', `记录:${rec.A0188};id:${JSON.stringify(rst)}`)
                 cnt += 1
@@ -201,12 +202,12 @@ class Sync {
                     var templateInfo = await Pub.template(rec.company, 'K_MONTH')
                     var savePath = await Pub.getSavePath(templateInfo.savePath, rec.K_ID)
                     var files = await Esign.getCompanyApi(rec.company).sign.signFlowFile(rec.SIGNFLOWID)
-                    await this.hrm.NewEmpSynced(rec.K_ID, 2, rec.SIGNFLOWID, '转正申请签署结果', '', `记录：${rec.A0188};签署完毕`, files.files, savePath)
+                    await this.hrm.monthAttendanceSynced(rec.K_ID, 2, rec.SIGNFLOWID, '转正申请签署结果', '', `记录：${rec.A0188};签署完毕`, files.files, savePath)
                 }
             }catch(ex) {
                 var errMsg = ex.message || ex
                 errMsg = errMsg.replaceAll(`'`, `''`)
-                await this.hrm.NewEmpSynced(rec.K_ID, 1, rec.SIGNFLOWID, '转正申请签署结果', '', `记录：${rec.A0188};错误信息:${errMsg}`)
+                await this.hrm.monthAttendanceSynced(rec.K_ID, 1, rec.SIGNFLOWID, '转正申请签署结果', '', `记录：${rec.A0188};错误信息:${errMsg}`)
             }
         }
     }

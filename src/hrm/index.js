@@ -255,6 +255,33 @@ class Hrm {
         return await this.getData('A43', undefined, `and i.SIGNED=2 and i.ESIGNSTATE='Esign02'`)
     }
 
+    async NewEmpSynced(id, status, flowId, businessName, operator, info, files, savePath) {
+        var strSql = ``
+        if(files) {
+            var curMonth = moment(new Date()).format('yyyy-MM')
+            strSql += `if exists(select 1 from A43 where TransID=${id} and SIGNATTACH is null) update A43 set SIGNATTACH=newid() where TransID=${id}
+            `
+            for(var idx in files) {
+                var file = files[idx]
+                var fileName = file.fileName.split('.')
+                var type = fileName[fileName.length -1]
+                file.tmpFileName = file.fileId + '.' + type
+                file.filePath = `/upload/${curMonth}/accessory`
+                var dir = `${this._cfg.wwwRoot}${this._cfg.filePath}${file.filePath}`
+                await this.getFileByUrl(file.downloadUrl, dir, file.tmpFileName)
+                if(savePath) {
+                    await this.copyFile(dir, file.tmpFileName, savePath, file.fileName)
+                }
+                strSql += `insert into ysysDocuments(guidCode,Dname,DFileName,fileLength,filePath)
+                select SIGNATTACH,'${file.fileName}','${file.fileName}',${0},'${file.filePath}/${file.tmpFileName}'
+                from A43 where TransID=${id}
+                `
+            }
+        }
+        strSql += `update A43 set ESIGNSTATE='${status===1?'Esign02':status===2?'Esign03':'Esign04'}',SIGNFLOWID='${flowId}' where TRANSID=${id}
+        insert into esign_log(SYNDate,SYNState,ESIGNBUSINESS,ESIGNOPERATOR,FEEDBACK) select getdate(),${(status===1|| status===2)?1:2},'${businessName}','${operator}','${info}'`
+        await this._db.excSql(undefined,strSql)
+    }
     
     async monthAttendance() {
         return await this.getData('K_Month', undefined, `and __chk=1 and i.ESIGNSTATE='Esign01'`)
@@ -348,33 +375,6 @@ class Hrm {
         return recs.recordset
     }
 
-    async NewEmpSynced(id, status, flowId, businessName, operator, info, files, savePath) {
-        var strSql = ``
-        if(files) {
-            var curMonth = moment(new Date()).format('yyyy-MM')
-            strSql += `if exists(select 1 from A43 where TransID=${id} and SIGNATTACH is null) update A43 set SIGNATTACH=newid() where TransID=${id}
-            `
-            for(var idx in files) {
-                var file = files[idx]
-                var fileName = file.fileName.split('.')
-                var type = fileName[fileName.length -1]
-                file.tmpFileName = file.fileId + '.' + type
-                file.filePath = `/upload/${curMonth}/accessory`
-                var dir = `${this._cfg.wwwRoot}${this._cfg.filePath}${file.filePath}`
-                await this.getFileByUrl(file.downloadUrl, dir, file.tmpFileName)
-                if(savePath) {
-                    await this.copyFile(dir, file.tmpFileName, savePath, file.fileName)
-                }
-                strSql += `insert into ysysDocuments(guidCode,Dname,DFileName,fileLength,filePath)
-                select SIGNATTACH,'${file.fileName}','${file.fileName}',${0},'${file.filePath}/${file.tmpFileName}'
-                from A43 where TransID=${id}
-                `
-            }
-        }
-        strSql += `update A43 set ESIGNSTATE='${status===1?'Esign02':status===2?'Esign03':'Esign04'}',SIGNFLOWID='${flowId}' where TRANSID=${id}
-        insert into esign_log(SYNDate,SYNState,ESIGNBUSINESS,ESIGNOPERATOR,FEEDBACK) select getdate(),${(status===1|| status===2)?1:2},'${businessName}','${operator}','${info}'`
-        await this._db.excSql(undefined,strSql)
-    }
 
     async OldEmpSynced(id) {
         var strSql = `if not exists(select 1 from C41Synced where id=${id}) insert into C41Synced(id)values(${id})`
