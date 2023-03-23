@@ -248,20 +248,20 @@ class Hrm {
     }
 
     async NewEmp() {
-        return await this.getData('A43', undefined, `and i.A43114='待发起'`)
+        return await this.getData('A43', undefined, ` and i.SIGNED=2 and i.ESIGNSTATE='Esign01'`)
     }
 
     async NewEmpSign() {
-        return await this.getData('A43', undefined, `and i.A43114='签署中'`)
+        return await this.getData('A43', undefined, `and i.SIGNED=2 and i.ESIGNSTATE='Esign02'`)
     }
 
     
     async monthAttendance() {
-        return await this.getData('K_Month', undefined, `and i.ESIGNSTATE='待发起'`)
+        return await this.getData('K_Month', undefined, `and __chk=1 and i.ESIGNSTATE='Esign01'`)
     }
 
     async monthAttendanceSign() {
-        return await this.getData('K_Month', undefined, `and i.ESIGNSTATE='签署中'`)
+        return await this.getData('K_Month', undefined, `and __chk=1 and i.ESIGNSTATE='Esign02'`)
     }
 
     async monthAttendanceSynced(id, status, flowId, businessName, operator, info, files, savePath) {
@@ -287,7 +287,7 @@ class Hrm {
                 `
             }
         }
-        strSql += `update K_Month set ESIGNSTATE='${status===1?'签署中':status===2?'签署完成':'签署异常'}',SIGNFLOWID='${flowId}' where k_id=${id}
+        strSql += `update K_Month set ESIGNSTATE='${status===1?'Esign02':status===2?'Esign03':'Esign04'}',SIGNFLOWID='${flowId}' where k_id=${id}
         insert into esign_log(SYNDate,SYNState,ESIGNBUSINESS,ESIGNOPERATOR,FEEDBACK) select getdate(),${(status===1|| status===2)?1:2},'${businessName}','${operator}','${info}'`
         await this._db.excSql(undefined,strSql)
     }
@@ -344,7 +344,7 @@ class Hrm {
             }
             
         }
-        var recs = await this._db.getData(undefined, `select ${sqlSelect} \nfrom \n${sqlTables} \nwhere i.SIGNED=2 ${strWhere}`)
+        var recs = await this._db.getData(undefined, `select ${sqlSelect} \nfrom \n${sqlTables} \nwhere 1=1 ${strWhere}`)
         return recs.recordset
     }
 
@@ -371,7 +371,7 @@ class Hrm {
                 `
             }
         }
-        strSql += `update A43 set A43114='${status===1?'签署中':status===2?'签署完成':'签署异常'}',SIGNFLOWID='${flowId}' where TRANSID=${id}
+        strSql += `update A43 set ESIGNSTATE='${status===1?'Esign02':status===2?'Esign03':'Esign04'}',SIGNFLOWID='${flowId}' where TRANSID=${id}
         insert into esign_log(SYNDate,SYNState,ESIGNBUSINESS,ESIGNOPERATOR,FEEDBACK) select getdate(),${(status===1|| status===2)?1:2},'${businessName}','${operator}','${info}'`
         await this._db.excSql(undefined,strSql)
     }
