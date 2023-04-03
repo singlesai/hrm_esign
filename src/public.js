@@ -10,7 +10,7 @@ const Hrm = require('./hrm')
             var hrm = new Hrm()
             this._companys = await hrm.companys()
         }
-        var rst = this._companys.find(element => { return element.name === name })
+        var rst = this._companys.find(element => { return element.name === name || element.number === name })
         if (!rst) {
             throw(`公司'${name}'不存在配置`)
         }
@@ -28,7 +28,7 @@ const Hrm = require('./hrm')
             var hrm = new Hrm()
             this._companys = await hrm.companys()
         }
-        var rst = this._companys.find(element => { return element.name === company })
+        var rst = this._companys.find(element => { return element.name === company || element.number===company })
         if (!rst) {
             throw(`公司'${company}'不存在配置`)
         }

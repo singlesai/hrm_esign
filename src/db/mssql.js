@@ -92,7 +92,8 @@ class Mssql{
                 console.log('getData Sql', strSql)
             }
             await this.init(env)
-            return await this._db.query(strSql)
+            var rst = await this._db.query(strSql)
+            return rst
         }catch(ex){
                 console.log('getData Err:', strSql)
             throw(ex)

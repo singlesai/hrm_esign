@@ -15,7 +15,7 @@ class Hrm {
 
     async tableFields(table) {
         if (!this._cache[table]) {
-            this._cache[table] = await this._db.query(undefined, 'ySysColumns', {op:'=',lVal:{type:'prop', value:'TableName'},rVal:{type:'string',value: table}}, ['ColName', 'DisplayLabel', 'EditFormat'])
+            this._cache[table] = await this._db.query(undefined, 'ySysColumns', {op:'=',lVal:{type:'prop', value:'TableName'},rVal:{type:'string',value: table}}, ['ColName', 'DisplayLabel', 'EditFormat', 'ColType'])
         }
         return this._cache[table]
     }
@@ -91,6 +91,7 @@ class Hrm {
         for(var idx in recs) {
             var rec = recs[idx]
             var r = {
+                number: rec.BM0000,
                 name: rec.MC0000,
                 orgId: rec.COMPANYID,
                 appId: rec.APPLYID,
@@ -323,7 +324,73 @@ class Hrm {
         return await this.getData('C41', 'HT_NUMBER')
     }
 
-    async getData(table, empField, strWhere) {      
+    async getData(table, empField, strWhere) {
+        var fields = await this.tableFields(table)
+        var strSql = `select * from ${table} i where 1=1 ${strWhere}`
+        var recs = await this._db.getData(undefined, strSql)
+        var rsts = []
+        for (var idx in recs.recordset) {
+            var rst = {}
+            for (var key in recs.recordset[idx]) {
+                if (recs.recordset[idx][key] && recs.recordset[idx][key]!==null) {
+                    rst[key.toLowerCase()] = recs.recordset[idx][key]
+                }
+            }
+            for (var jdx in fields) {
+                var field = fields[jdx]
+                field.ColName = field.ColName.toLowerCase()
+                if (field.EditFormat && field.EditFormat!==null && rst[field.ColName] && rst[field.ColName]!==null) {
+                    switch(field.EditFormat.substr(0,4)) {
+                        case 'LOOK':
+                            var strTmp = field.EditFormat
+                            strTmp = strTmp.substr(strTmp.indexOf('(')+1, strTmp.lastIndexOf(')')-strTmp.indexOf('('))
+                            var strArr = strTmp.split('|')
+                            switch(field.ColType.toLowerCase()) {
+                                case 'varchar':
+                                case 'datetime':
+                                    var strWhere = ` ${strArr[1]}='${rst[field.ColName]}'`
+                                    break
+                                default:
+                                    strWhere = ` ${strArr[1]}=${rst[field.ColName]}`
+                                    break
+                            }
+                            strSql = `select top 1 * from ${strArr[0]} where ${strWhere}`
+                            var recs1 = await this._db.getData(undefined, strSql)
+                            if (recs1.recordset.length > 0) {
+                                rec = {}
+                                for (var key in recs1.recordset[0]) {
+                                    if (recs1.recordset[0][key] && recs1.recordset[0][key]!==null) {
+                                        rec[key.toLowerCase()] = recs1.recordset[0][key]
+                                    }
+                                }
+                                rst[field.ColName] = rec[strArr[2].toLowerCase()]
+
+                                rst[field.ColName+'_obj'] = rec
+                            }
+                            break
+                        case 'CODE':
+                        case 'RADI':
+                            var strTmp = field.EditFormat
+                            strTmp = strTmp.substr(strTmp.indexOf('(')+1, strTmp.lastIndexOf(')')-strTmp.indexOf('('))
+                            var strArr = strTmp.split('|')
+                            strSql = `select top 1 * from ${strArr[0]} where BM0000='${rst[field.ColName]}'`
+                            recs1 = await this._db.getData(undefined, strSql)
+                            if (recs1.recordset.length > 0) {
+                                var rec = recs1.recordset[0]
+                                rst[field.ColName] = rec.MC0000
+                                rst[field.ColName+'_obj'] = rec
+                            }
+                            break
+                    }
+                }
+            }
+            rsts.push(rst)
+        }
+        
+        return rsts
+    }
+
+    async getDataOld(table, empField, strWhere) {      
         var fields = await this.tableFields(table)
         var sqlSelect = ''
         var sqlTables = table + ' i'
@@ -353,8 +420,6 @@ class Hrm {
                                 hasCompany = true
                             }
                         }
-                        
-                        
                         break
                     case 'CODE':
                     case 'RADI':
